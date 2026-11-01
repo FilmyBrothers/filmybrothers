@@ -267,9 +267,11 @@ function FilmCard({ film, index, onPlay, isVideoOpen }) {
   );
 }
 
-function Films({ films, isAdmin, onAddFilm, onRemoveFilm, onPlayFilm, isVideoOpen }) {
+function Films({ films, isAdmin, onAddFilm, onRemoveFilm, onReorderFilms, onPlayFilm, isVideoOpen }) {
   const [removingFilmId, setRemovingFilmId] = useState(null);
   const [removalError, setRemovalError] = useState("");
+  const [draggedFilmId, setDraggedFilmId] = useState(null);
+  const [reorderError, setReorderError] = useState("");
 
   async function handleRemoveFilm(film) {
     if (!window.confirm(`Remove "${film.title}" from the site and database?`)) return;
@@ -287,6 +289,34 @@ function Films({ films, isAdmin, onAddFilm, onRemoveFilm, onPlayFilm, isVideoOpe
     }
   }
 
+  async function moveFilm(filmIndex, direction) {
+    const destinationIndex = filmIndex + direction;
+    if (destinationIndex < 0 || destinationIndex >= films.length) return;
+
+    const reorderedFilms = [...films];
+    [reorderedFilms[filmIndex], reorderedFilms[destinationIndex]] = [
+      reorderedFilms[destinationIndex],
+      reorderedFilms[filmIndex],
+    ];
+    setReorderError("");
+    const error = await onReorderFilms(reorderedFilms);
+    if (error) setReorderError(error);
+  }
+
+  async function dropFilm(destinationId) {
+    if (!draggedFilmId || draggedFilmId === destinationId) return;
+    const sourceIndex = films.findIndex((film) => film.id === draggedFilmId);
+    const destinationIndex = films.findIndex((film) => film.id === destinationId);
+    if (sourceIndex < 0 || destinationIndex < 0) return;
+
+    const reorderedFilms = [...films];
+    const [draggedFilm] = reorderedFilms.splice(sourceIndex, 1);
+    reorderedFilms.splice(destinationIndex, 0, draggedFilm);
+    setReorderError("");
+    const error = await onReorderFilms(reorderedFilms);
+    if (error) setReorderError(error);
+  }
+
   return (
     <section className="films section-wrap" id="films">
       <div className="films-heading reveal-on-scroll" data-reveal>
@@ -301,20 +331,59 @@ function Films({ films, isAdmin, onAddFilm, onRemoveFilm, onPlayFilm, isVideoOpe
       <div className="film-grid">
         {films.map((film, index) => (
           <div
-            className="film-reveal reveal-on-scroll"
+            className={`film-reveal reveal-on-scroll${draggedFilmId === film.id ? " is-dragging" : ""}`}
             data-reveal
             key={film.id}
+            onDragOver={(event) => {
+              if (draggedFilmId) event.preventDefault();
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              void dropFilm(film.id);
+              setDraggedFilmId(null);
+            }}
             style={{ "--reveal-delay": `${Math.min(index, 5) * 90}ms` }}
           >
             {isAdmin && (
-              <button
-                className="film-remove-button"
-                type="button"
-                disabled={removingFilmId === film.id}
-                onClick={() => handleRemoveFilm(film)}
-              >
-                {removingFilmId === film.id ? "Removing…" : "Remove"}
-              </button>
+              <div className="film-admin-controls">
+                <button
+                  aria-label={`Drag ${film.title} to reorder`}
+                  className="film-drag-handle"
+                  draggable="true"
+                  onDragEnd={() => setDraggedFilmId(null)}
+                  onDragStart={(event) => {
+                    setDraggedFilmId(film.id);
+                    event.dataTransfer.effectAllowed = "move";
+                    event.dataTransfer.setData("text/plain", film.id);
+                  }}
+                  title="Drag to reorder"
+                  type="button"
+                >⠿</button>
+                <button
+                  aria-label={`Move ${film.title} up`}
+                  className="film-order-button"
+                  disabled={index === 0}
+                  onClick={() => void moveFilm(index, -1)}
+                  title="Move up"
+                  type="button"
+                >↑</button>
+                <button
+                  aria-label={`Move ${film.title} down`}
+                  className="film-order-button"
+                  disabled={index === films.length - 1}
+                  onClick={() => void moveFilm(index, 1)}
+                  title="Move down"
+                  type="button"
+                >↓</button>
+                <button
+                  className="film-remove-button"
+                  type="button"
+                  disabled={removingFilmId === film.id}
+                  onClick={() => handleRemoveFilm(film)}
+                >
+                  {removingFilmId === film.id ? "Removing…" : "Remove"}
+                </button>
+              </div>
             )}
             <FilmCard
               film={film}
@@ -326,6 +395,7 @@ function Films({ films, isAdmin, onAddFilm, onRemoveFilm, onPlayFilm, isVideoOpe
         ))}
       </div>
       {removalError && <p className="storage-error" role="alert">{removalError}</p>}
+      {reorderError && <p className="storage-error" role="alert">{reorderError}</p>}
       {films.length === 0 && (
         <p className="films-empty" role="status">
           {isAdmin ? "Add a film to feature it here." : "Films will appear here once they are added."}
@@ -788,6 +858,7 @@ function Story() {
 function Contact({ onSubmit, onSubscribe }) {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [warning, setWarning] = useState("");
   const [fileError, setFileError] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -800,6 +871,7 @@ function Contact({ onSubmit, onSubscribe }) {
     }
     setStatus("");
     setError("");
+    setWarning("");
     setIsSubmitting(true);
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -819,8 +891,11 @@ function Contact({ onSubmit, onSubscribe }) {
     }
 
     if (result) {
-      setError(result);
-      return;
+      if (typeof result === "string") {
+        setError(result);
+        return;
+      }
+      setWarning(result.warning || "");
     }
 
     form.reset();
@@ -895,6 +970,7 @@ function Contact({ onSubmit, onSubscribe }) {
           </button>
           {error && <p className="form-error" role="alert">{error}</p>}
           {status && <p className="form-success" role="status">{status}</p>}
+          {warning && <p className="form-error" role="status">{warning}</p>}
         </form>
         <div className="contact-aside">
           <section>
@@ -1061,7 +1137,8 @@ export default function App() {
     const loadFilms = async () => {
       const { data, error } = await supabase
         .from("films")
-        .select("id, title, youtube_id, type, description")
+        .select("id, title, youtube_id, type, description, sort_order")
+        .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
 
       if (!active) return;
@@ -1074,6 +1151,7 @@ export default function App() {
           title: film.title,
           type: film.type,
           description: film.description,
+          sortOrder: film.sort_order,
         })));
       }
       setFilmsLoading(false);
@@ -1185,10 +1263,11 @@ export default function App() {
   async function addFilm(film) {
     if (!supabase) return "Supabase is not configured.";
 
+    const sortOrder = films.reduce((highest, currentFilm) => Math.max(highest, currentFilm.sortOrder ?? -1), -1) + 1;
     const { data, error } = await supabase
       .from("films")
-      .insert({ title: film.title, youtube_id: film.id, type: film.type, description: "" })
-      .select("id, title, youtube_id, type, description")
+      .insert({ title: film.title, youtube_id: film.id, type: film.type, description: "", sort_order: sortOrder })
+      .select("id, title, youtube_id, type, description, sort_order")
       .single();
 
     if (error) {
@@ -1203,10 +1282,51 @@ export default function App() {
         title: data.title,
         type: data.type,
         description: data.description,
+        sortOrder: data.sort_order,
       },
     ]);
     setAppError("");
     setDialogMode(null);
+    return null;
+  }
+
+  async function reorderFilms(reorderedFilms) {
+    if (!supabase) return "Supabase is not configured.";
+
+    setFilms(reorderedFilms);
+    for (const [sortOrder, film] of reorderedFilms.entries()) {
+      const { data, error } = await supabase
+        .from("films")
+        .update({ sort_order: sortOrder })
+        .eq("youtube_id", film.id)
+        .select("youtube_id")
+        .maybeSingle();
+
+      if (error || !data) {
+        console.error("Film order could not be saved to Supabase.", error || "No row was updated.");
+        const { data: currentFilms, error: loadError } = await supabase
+          .from("films")
+          .select("id, title, youtube_id, type, description, sort_order")
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true });
+
+        if (loadError) {
+          console.error("Film order could not be reloaded after a failed update.", loadError);
+          setAppError("Film order could not be saved or reloaded. Refresh the page to see the saved order.");
+        } else {
+          setFilms(currentFilms.map((currentFilm) => ({
+            id: currentFilm.youtube_id,
+            title: currentFilm.title,
+            type: currentFilm.type,
+            description: currentFilm.description,
+            sortOrder: currentFilm.sort_order,
+          })));
+        }
+        return "Film order could not be saved. Run the updated supabase/setup.sql, then try again.";
+      }
+    }
+
+    setAppError("");
     return null;
   }
 
@@ -1262,6 +1382,28 @@ export default function App() {
       console.error("The contact message could not be saved.", error);
       return "Your message could not be sent right now. Please try again or email us directly.";
     }
+
+    let notificationResponse;
+    try {
+      notificationResponse = await fetch("/.netlify/functions/contact-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...message,
+          attachmentNames: attachments.map((file) => file.name),
+        }),
+      });
+    } catch (notificationError) {
+      console.error("The contact message was saved, but its email notification failed.", notificationError);
+      return { warning: "Your message was received, but the team email notification failed. Please also email info@filmybrothers.com." };
+    }
+
+    if (!notificationResponse.ok) {
+      const notificationError = await notificationResponse.json().catch(() => null);
+      console.error("The contact message was saved, but its email notification failed.", notificationError);
+      return { warning: "Your message was received, but the team email notification failed. Please also email info@filmybrothers.com." };
+    }
+
     return null;
   }
 
@@ -1302,6 +1444,7 @@ export default function App() {
           isVideoOpen={Boolean(playingFilm)}
           onPlayFilm={setPlayingFilm}
           onRemoveFilm={removeFilm}
+          onReorderFilms={reorderFilms}
           onAddFilm={() => {
             setAppError("");
             setDialogMode("add");

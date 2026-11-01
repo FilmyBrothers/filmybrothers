@@ -29,7 +29,7 @@ create policy "Only the admin can read contact messages"
 on public.contact_messages
 for select
 to authenticated
-using ((select auth.jwt() ->> 'email') = 'YOUR_ADMIN_EMAIL');
+using ((select auth.jwt() ->> 'email') = 'filmybrothersproduction@gmail.com');
 
 create table if not exists public.newsletter_subscriptions (
   email text primary key check (
@@ -55,7 +55,7 @@ create policy "Only the admin can read newsletter subscriptions"
 on public.newsletter_subscriptions
 for select
 to authenticated
-using ((select auth.jwt() ->> 'email') = 'YOUR_ADMIN_EMAIL');
+using ((select auth.jwt() ->> 'email') = 'filmybrothersproduction@gmail.com');
 
 insert into storage.buckets (
   id,
@@ -94,5 +94,5 @@ for select
 to authenticated
 using (
   bucket_id = 'contact-attachments'
-  and (select auth.jwt() ->> 'email') = 'YOUR_ADMIN_EMAIL'
+  and (select auth.jwt() ->> 'email') = 'filmybrothersproduction@gmail.com'
 );

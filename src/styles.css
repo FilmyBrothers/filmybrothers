@@ -550,11 +550,25 @@ button {
   min-width: 0;
 }
 
-.film-remove-button {
+.film-reveal.is-dragging {
+  opacity: 0.45;
+}
+
+.film-admin-controls {
   position: absolute;
   z-index: 4;
   top: 0.65rem;
   right: 0.65rem;
+  left: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  pointer-events: none;
+}
+
+.film-drag-handle,
+.film-order-button,
+.film-remove-button {
   padding: 0.5rem 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.55);
   color: #fff;
@@ -563,12 +577,41 @@ button {
   font: inherit;
   font-size: 0.75rem;
   transition: border-color 180ms ease, color 180ms ease, opacity 180ms ease;
+  pointer-events: auto;
 }
 
+.film-drag-handle {
+  cursor: grab;
+  font-size: 1rem;
+}
+
+.film-drag-handle:active {
+  cursor: grabbing;
+}
+
+.film-remove-button {
+  margin-left: auto;
+}
+
+.film-order-button {
+  min-width: 2rem;
+  padding-right: 0.55rem;
+  padding-left: 0.55rem;
+}
+
+.film-drag-handle:hover,
+.film-drag-handle:focus-visible,
+.film-order-button:hover,
+.film-order-button:focus-visible,
 .film-remove-button:hover,
 .film-remove-button:focus-visible {
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+.film-order-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .film-remove-button:disabled {
