@@ -21,12 +21,13 @@ team portraits use the images hosted by the Filmy Brothers GoDaddy site.
 2. In **Authentication → Users**, add the one admin user with the email and
    password you want to use. Disable public sign-ups in **Authentication →
    Settings** so nobody else can create an account.
-3. In the Supabase SQL Editor, open [`supabase/setup.sql`](./supabase/setup.sql),
-   replace `YOUR_ADMIN_EMAIL` with the admin user's email, then run the SQL.
-   This setup is safe to rerun on an existing project; it adds the `type` and
-   `description` columns required by the database-backed film grid and gallery.
-   The table is publicly readable, but row-level security allows inserts only
-   from that admin email.
+3. Find the admin user's ID on the **Authentication → Users** page. In the
+   Supabase SQL Editor, open [`supabase/setup.sql`](./supabase/setup.sql),
+   replace `YOUR_ADMIN_USER_ID` with that UUID, then run the SQL. This setup is
+   safe to rerun on an existing project; it adds the `type` and `description`
+   columns required by the database-backed film grid and gallery. The table is
+   publicly readable, but row-level security allows only that admin to insert
+   and delete films.
    Then run [`supabase/seed-films.sql`](./supabase/seed-films.sql) in the SQL
    Editor to add or refresh the twelve films, teasers, and songs. This seed is
    safe to rerun and updates the existing rows by YouTube ID.
@@ -37,8 +38,7 @@ team portraits use the images hosted by the Filmy Brothers GoDaddy site.
    (8 MB each), but cannot read them; the configured admin can review records in
    the Supabase table editor and private attachments in Storage.
 5. In **Project Settings → API**, copy the project URL and the publishable
-   key (or legacy `anon` key). Find the admin's user ID on the Authentication
-   Users page.
+   key (or legacy `anon` key).
 6. Copy `.env.example` to `.env.local` and fill in:
 
    ```dotenv

@@ -15,6 +15,7 @@ alter table public.films enable row level security;
 
 grant select on public.films to anon, authenticated;
 grant insert on public.films to authenticated;
+grant delete on public.films to authenticated;
 
 drop policy if exists "Films are publicly readable" on public.films;
 create policy "Films are publicly readable"
@@ -28,4 +29,11 @@ create policy "Only the admin can add films"
 on public.films
 for insert
 to authenticated
-with check ((select auth.jwt() ->> 'email') = 'YOUR_ADMIN_EMAIL');
+with check ((select auth.uid()) = 'YOUR_ADMIN_USER_ID'::uuid);
+
+drop policy if exists "Only the admin can delete films" on public.films;
+create policy "Only the admin can delete films"
+on public.films
+for delete
+to authenticated
+using ((select auth.uid()) = 'YOUR_ADMIN_USER_ID'::uuid);

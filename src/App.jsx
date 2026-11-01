@@ -267,7 +267,26 @@ function FilmCard({ film, index, onPlay, isVideoOpen }) {
   );
 }
 
-function Films({ films, isAdmin, onAddFilm, onPlayFilm, isVideoOpen }) {
+function Films({ films, isAdmin, onAddFilm, onRemoveFilm, onPlayFilm, isVideoOpen }) {
+  const [removingFilmId, setRemovingFilmId] = useState(null);
+  const [removalError, setRemovalError] = useState("");
+
+  async function handleRemoveFilm(film) {
+    if (!window.confirm(`Remove "${film.title}" from the site and database?`)) return;
+
+    setRemovalError("");
+    setRemovingFilmId(film.id);
+    try {
+      const error = await onRemoveFilm(film);
+      if (error) setRemovalError(error);
+    } catch (error) {
+      console.error("The film could not be removed.", error);
+      setRemovalError("This video could not be removed. Check your connection and try again.");
+    } finally {
+      setRemovingFilmId(null);
+    }
+  }
+
   return (
     <section className="films section-wrap" id="films">
       <div className="films-heading reveal-on-scroll" data-reveal>
@@ -287,6 +306,16 @@ function Films({ films, isAdmin, onAddFilm, onPlayFilm, isVideoOpen }) {
             key={film.id}
             style={{ "--reveal-delay": `${Math.min(index, 5) * 90}ms` }}
           >
+            {isAdmin && (
+              <button
+                className="film-remove-button"
+                type="button"
+                disabled={removingFilmId === film.id}
+                onClick={() => handleRemoveFilm(film)}
+              >
+                {removingFilmId === film.id ? "Removing…" : "Remove"}
+              </button>
+            )}
             <FilmCard
               film={film}
               index={index}
@@ -296,6 +325,7 @@ function Films({ films, isAdmin, onAddFilm, onPlayFilm, isVideoOpen }) {
           </div>
         ))}
       </div>
+      {removalError && <p className="storage-error" role="alert">{removalError}</p>}
       {films.length === 0 && (
         <p className="films-empty" role="status">
           {isAdmin ? "Add a film to feature it here." : "Films will appear here once they are added."}
@@ -1180,6 +1210,25 @@ export default function App() {
     return null;
   }
 
+  async function removeFilm(film) {
+    if (!supabase) return "Supabase is not configured.";
+
+    const { error } = await supabase
+      .from("films")
+      .delete()
+      .eq("youtube_id", film.id);
+
+    if (error) {
+      console.error("The film could not be removed from Supabase.", error);
+      return "This video could not be removed. Check the Supabase delete policy and try again.";
+    }
+
+    setFilms((currentFilms) => currentFilms.filter((currentFilm) => currentFilm.id !== film.id));
+    if (playingFilm?.id === film.id) setPlayingFilm(null);
+    setAppError("");
+    return null;
+  }
+
   async function submitContact({ attachments, ...message }) {
     if (!supabase) {
       return "The contact form is not configured. Add the Supabase settings and run the website-forms SQL setup.";
@@ -1246,6 +1295,7 @@ export default function App() {
           isAdmin={isAdmin}
           isVideoOpen={Boolean(playingFilm)}
           onPlayFilm={setPlayingFilm}
+          onRemoveFilm={removeFilm}
           onAddFilm={() => {
             setAppError("");
             setDialogMode("add");
