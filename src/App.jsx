@@ -1213,14 +1213,20 @@ export default function App() {
   async function removeFilm(film) {
     if (!supabase) return "Supabase is not configured.";
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("films")
       .delete()
-      .eq("youtube_id", film.id);
+      .eq("youtube_id", film.id)
+      .select("youtube_id")
+      .maybeSingle();
 
     if (error) {
       console.error("The film could not be removed from Supabase.", error);
       return "This video could not be removed. Check the Supabase delete policy and try again.";
+    }
+    if (!data) {
+      console.error("Supabase did not delete the film; no matching row was returned.");
+      return "Supabase did not remove this video. Run the admin delete-policy SQL in Supabase, then try again.";
     }
 
     setFilms((currentFilms) => currentFilms.filter((currentFilm) => currentFilm.id !== film.id));
