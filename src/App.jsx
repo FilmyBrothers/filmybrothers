@@ -81,8 +81,8 @@ function validatePosterFile(file) {
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
     return "Choose a JPG, PNG, or WebP poster image.";
   }
-  if (file.size > 10 * 1024 * 1024) {
-    return "The poster must be 10 MB or smaller.";
+  if (file.size > 8 * 1024 * 1024) {
+    return "The poster must be 8 MB or smaller.";
   }
   return "";
 }
