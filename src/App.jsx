@@ -799,7 +799,7 @@ function PosterGallery({
   onUpdatePoster,
   onReorderPoster,
 }) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(null);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
@@ -808,7 +808,9 @@ function PosterGallery({
   const replaceInputRef = useRef(null);
   const replacementPosterRef = useRef(null);
   const publishedPosters = posters.filter((poster) => poster.is_published);
-  const activePosterIndex = publishedPosters.length ? activeIndex % publishedPosters.length : 0;
+  const activePosterIndex = publishedPosters.length
+    ? (activeIndex ?? publishedPosters.length - 1) % publishedPosters.length
+    : 0;
   const activePoster = publishedPosters[activePosterIndex];
   const incomingPoster = publishedPosters.length > 1
     ? publishedPosters[(activePosterIndex - 1 + publishedPosters.length) % publishedPosters.length]
@@ -851,7 +853,9 @@ function PosterGallery({
   useEffect(() => {
     if (reduceMotion || publishedPosters.length < 2) return undefined;
     const timerId = window.setInterval(() => {
-      setActiveIndex((index) => (index - 1 + publishedPosters.length) % publishedPosters.length);
+      setActiveIndex((index) => (
+        ((index ?? publishedPosters.length - 1) - 1 + publishedPosters.length) % publishedPosters.length
+      ));
     }, 2000);
     return () => window.clearInterval(timerId);
   }, [publishedPosters.length, reduceMotion]);
@@ -870,7 +874,7 @@ function PosterGallery({
   const moveSelection = (direction) => {
     if (!publishedPosters.length) return;
     setActiveIndex((index) => (
-      (index + direction + publishedPosters.length) % publishedPosters.length
+      ((index ?? publishedPosters.length - 1) + direction + publishedPosters.length) % publishedPosters.length
     ));
   };
 
@@ -891,7 +895,11 @@ function PosterGallery({
       const error = await onAddPosters(files, (current, total) => {
         setUploadProgress(`Uploading ${current} of ${total}…`);
       });
-      if (error) setPosterError(error);
+      if (error) {
+        setPosterError(error);
+      } else {
+        setActiveIndex(null);
+      }
     } catch (error) {
       console.error("Carousel posters could not be uploaded.", error);
       setPosterError("Posters could not be uploaded. Check your connection and try again.");
