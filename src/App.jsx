@@ -427,7 +427,7 @@ function Films({ films, isAdmin, onAddFilm, onRemoveFilm, onReorderFilms, onPlay
   return (
     <section className="films section-wrap" id="films">
       <div className="films-heading reveal-on-scroll" data-reveal>
-        <SectionHeading eyebrow="Stories made to be shared" title="MOVIES" number="01 / 03" />
+        <SectionHeading eyebrow="Stories made to be shared" title="FILMS" number="01 / 03" />
         {isAdmin && (
           <button className="add-film-button" type="button" onClick={onAddFilm}>
             <span aria-hidden="true">+</span>
