@@ -2,6 +2,7 @@ const MAX_BODY_BYTES = 16_384;
 const MAX_FIELD_LENGTHS = {
   name: 120,
   email: 254,
+  phone: 40,
   message: 5_000,
 };
 
@@ -49,7 +50,7 @@ export default async function contactNotification(request) {
     return respond(413, { error: "Request is too large." });
   }
 
-  const { name, email, message, attachmentNames = [] } = payload;
+  const { name, email, phone = "", message } = payload;
   if (
     typeof name !== "string"
     || name.trim().length < 1
@@ -58,12 +59,11 @@ export default async function contactNotification(request) {
     || email.trim().length < 3
     || email.trim().length > MAX_FIELD_LENGTHS.email
     || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+    || typeof phone !== "string"
+    || phone.trim().length > MAX_FIELD_LENGTHS.phone
     || typeof message !== "string"
     || message.trim().length < 1
     || message.trim().length > MAX_FIELD_LENGTHS.message
-    || !Array.isArray(attachmentNames)
-    || attachmentNames.length > 5
-    || attachmentNames.some((fileName) => typeof fileName !== "string" || fileName.length > 255)
   ) {
     return respond(400, { error: "Please provide valid contact details and message." });
   }
@@ -78,18 +78,16 @@ export default async function contactNotification(request) {
 
   const safeName = name.trim().replace(/[\r\n]+/g, " ");
   const safeEmail = email.trim();
-  const attachmentList = attachmentNames.length
-    ? `\n\nAttachments uploaded to the contact form:\n${attachmentNames.map((fileName) => `- ${fileName}`).join("\n")}`
-    : "";
+  const safePhone = phone.trim().replace(/[\r\n]+/g, " ");
   const text = [
     "A new message was submitted through filmybrothers.com.",
     "",
     `Name: ${safeName}`,
     `Email: ${safeEmail}`,
+    `Contact number: ${safePhone || "Not provided"}`,
     "",
     "Message:",
     message.trim(),
-    attachmentList,
   ].join("\n");
 
   let providerResponse;

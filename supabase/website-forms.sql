@@ -5,13 +5,15 @@ create table if not exists public.contact_messages (
     char_length(btrim(email)) between 3 and 254
     and btrim(email) ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+[.][A-Z]{2,}$'
   ),
+  phone text not null default '' check (char_length(btrim(phone)) <= 40),
   message text not null check (char_length(btrim(message)) between 1 and 5000),
   attachment_paths text[] not null default '{}',
   created_at timestamptz not null default now()
 );
 
 alter table public.contact_messages
-  add column if not exists attachment_paths text[] not null default '{}';
+  add column if not exists attachment_paths text[] not null default '{}',
+  add column if not exists phone text not null default '';
 
 alter table public.contact_messages enable row level security;
 grant insert on public.contact_messages to anon, authenticated;
@@ -78,14 +80,6 @@ set
   allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "Anyone can attach files to a contact message" on storage.objects;
-create policy "Anyone can attach files to a contact message"
-on storage.objects
-for insert
-to anon, authenticated
-with check (
-  bucket_id = 'contact-attachments'
-  and name ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}-[^/]+$'
-);
 
 drop policy if exists "Only the admin can read contact attachments" on storage.objects;
 create policy "Only the admin can read contact attachments"
