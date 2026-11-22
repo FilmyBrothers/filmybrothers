@@ -1638,7 +1638,15 @@ function Footer() {
           <img className="brand-logo" src="/filmy-brothers-logo.png" alt="" />
           <span className="brand-name">FILMY BROTHERS</span>
         </a>
-        <span>© {new Date().getFullYear()} Filmy Brothers. All rights reserved.</span>
+        <div className="footer-legal-meta">
+          <span>© {new Date().getFullYear()} Filmy Brothers. All rights reserved.</span>
+          <span>
+            Website by{" "}
+            <a href="https://shubhamupadhyayportfolio.netlify.app/" rel="noreferrer" target="_blank">
+              Shubham Upadhyay
+            </a>
+          </span>
+        </div>
       </div>
     </footer>
   );

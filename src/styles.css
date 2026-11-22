@@ -1565,6 +1565,29 @@ button {
   font-size: 0.75rem;
 }
 
+.footer-legal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem 1.25rem;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+.footer-legal-meta a {
+  color: #e7e2d9;
+  text-decoration: underline;
+  text-decoration-color: rgba(244, 162, 97, 0.6);
+  text-underline-offset: 0.2em;
+  transition: color 180ms ease;
+}
+
+.footer-legal-meta a:hover,
+.footer-legal-meta a:focus-visible {
+  color: var(--color-accent);
+}
+
 #home,
 #story,
 #films,
@@ -2401,6 +2424,11 @@ body.motion-ready .reveal-on-scroll.is-visible {
     align-items: flex-start;
     flex-direction: column;
     gap: 0.8rem;
+  }
+
+  .footer-legal-meta {
+    justify-content: flex-start;
+    text-align: left;
   }
 
   .brand-name {
