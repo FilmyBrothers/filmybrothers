@@ -210,7 +210,7 @@ function AdminWelcomeScreen() {
   );
 }
 
-function Header({ isAdmin, onAdminClick, onLogout }) {
+function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const closeMenu = () => setMenuOpen(false);
@@ -244,17 +244,6 @@ function Header({ isAdmin, onAdminClick, onLogout }) {
         <a href="#films" onClick={closeMenu}>Films</a>
         <a href="#news-events" onClick={closeMenu}>News &amp; Events</a>
         <a href="#contact" onClick={closeMenu}>Reach Us</a>
-        <button
-          className={`admin-access${isAdmin ? " is-admin" : ""}`}
-          type="button"
-          onClick={() => {
-            closeMenu();
-            isAdmin ? onLogout() : onAdminClick();
-          }}
-        >
-          <AdminIcon />
-          {isAdmin ? "Log out" : "Admin login"}
-        </button>
       </nav>
     </header>
   );
@@ -438,7 +427,7 @@ function Films({ films, isAdmin, onAddFilm, onRemoveFilm, onReorderFilms, onPlay
   return (
     <section className="films section-wrap" id="films">
       <div className="films-heading reveal-on-scroll" data-reveal>
-        <SectionHeading eyebrow="Stories made to be shared" title="Short Films" number="01 / 03" />
+        <SectionHeading eyebrow="Stories made to be shared" title="MOVIES" number="01 / 03" />
         {isAdmin && (
           <button className="add-film-button" type="button" onClick={onAddFilm}>
             <span aria-hidden="true">+</span>
@@ -820,9 +809,26 @@ function PosterGallery({
   const replacementPosterRef = useRef(null);
   const publishedPosters = posters.filter((poster) => poster.is_published);
   const activePosterIndex = publishedPosters.length ? activeIndex % publishedPosters.length : 0;
-  const nextPoster = publishedPosters.length > 1
-    ? publishedPosters[(activePosterIndex + 1) % publishedPosters.length]
+  const activePoster = publishedPosters[activePosterIndex];
+  const incomingPoster = publishedPosters.length > 1
+    ? publishedPosters[(activePosterIndex - 1 + publishedPosters.length) % publishedPosters.length]
     : null;
+  const activeThumbnailIndex = Math.max(
+    0,
+    posters.findIndex((poster) => poster.id === activePoster?.id),
+  );
+  const thumbnailOffsets = posters.length <= 15
+    ? posters.map((_, index) => (
+      ((index - activeThumbnailIndex + posters.length + Math.floor(posters.length / 2)) % posters.length)
+        - Math.floor(posters.length / 2)
+    ))
+    : Array.from({ length: 15 }, (_, index) => index - 7);
+  const visibleThumbnails = thumbnailOffsets
+    .map((offset) => ({
+      poster: posters[(activeThumbnailIndex + offset + posters.length) % posters.length],
+      offset,
+    }))
+    .sort((first, second) => first.offset - second.offset);
   const visibleSlides = publishedPosters.length <= 5
     ? publishedPosters.map((poster, index) => ({
       poster,
@@ -845,21 +851,21 @@ function PosterGallery({
   useEffect(() => {
     if (reduceMotion || publishedPosters.length < 2) return undefined;
     const timerId = window.setInterval(() => {
-      setActiveIndex((index) => (index + 1) % publishedPosters.length);
+      setActiveIndex((index) => (index - 1 + publishedPosters.length) % publishedPosters.length);
     }, 2000);
     return () => window.clearInterval(timerId);
   }, [publishedPosters.length, reduceMotion]);
 
   useEffect(() => {
-    if (!nextPoster?.url) return undefined;
+    if (!incomingPoster?.url) return undefined;
     const preload = document.createElement("link");
     preload.rel = "preload";
     preload.as = "image";
-    preload.href = nextPoster.url;
+    preload.href = incomingPoster.url;
     preload.fetchPriority = "low";
     document.head.append(preload);
     return () => preload.remove();
-  }, [nextPoster?.url]);
+  }, [incomingPoster?.url]);
 
   const moveSelection = (direction) => {
     if (!publishedPosters.length) return;
@@ -1011,16 +1017,14 @@ function PosterGallery({
                   onClick={() => setActiveIndex(publishedPosters.findIndex((entry) => entry.id === poster.id))}
                   type="button"
                 >
-                  {(poster.id === publishedPosters[activePosterIndex]?.id || poster.id === nextPoster?.id) && (
-                    <img
-                      className="has-custom-poster"
-                      src={poster.url}
-                      alt={poster.title}
-                      decoding="async"
-                      fetchPriority={poster.id === publishedPosters[activePosterIndex]?.id ? "high" : "low"}
-                      loading="eager"
-                    />
-                  )}
+                  <img
+                    className="has-custom-poster"
+                    src={poster.url}
+                    alt={poster.title}
+                    decoding="async"
+                    fetchPriority={poster.id === publishedPosters[activePosterIndex]?.id ? "high" : "low"}
+                    loading="eager"
+                  />
                 </button>
               );
             })}
@@ -1032,12 +1036,25 @@ function PosterGallery({
         </>
       )}
       {posters.length > 0 && (
-        <>
-          <div className="poster-thumbnails" aria-label="Choose a production poster">
-            {posters.map((poster, index) => {
+        <div className={`poster-thumbnail-carousel${posters.length > 15 ? " has-navigation" : ""}`}>
+          {posters.length > 15 && (
+            <button
+              aria-label="Previous production poster"
+              className="poster-thumbnail-arrow"
+              onClick={() => moveSelection(-1)}
+              type="button"
+            >‹</button>
+          )}
+          <div className="poster-thumbnails" role="group" aria-label="Choose a production poster">
+            {visibleThumbnails.map(({ poster, offset }) => {
+              const index = posters.findIndex((entry) => entry.id === poster.id);
               const publishedIndex = publishedPosters.findIndex((entry) => entry.id === poster.id);
               return (
-                <div className="poster-thumbnail-item" key={`${poster.id}-thumb`}>
+                <div
+                  className="poster-thumbnail-item"
+                  key={`${poster.id}-thumb`}
+                  style={{ "--thumbnail-column": offset + 8 }}
+                >
                   <button
                     aria-label={`${poster.is_published ? "Show" : "Draft"} poster ${index + 1}: ${poster.title}`}
                     aria-current={publishedIndex === activePosterIndex ? "true" : undefined}
@@ -1100,7 +1117,15 @@ function PosterGallery({
               );
             })}
           </div>
-        </>
+          {posters.length > 15 && (
+            <button
+              aria-label="Next production poster"
+              className="poster-thumbnail-arrow"
+              onClick={() => moveSelection(1)}
+              type="button"
+            >›</button>
+          )}
+        </div>
       )}
       {publishedPosters.length === 0 && (
         <div className="poster-gallery-empty" role="status">
@@ -1197,7 +1222,7 @@ function AdminDialog({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [title, setTitle] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
-  const [videoType, setVideoType] = useState("Short film");
+  const [videoType, setVideoType] = useState("Movie");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -1376,7 +1401,7 @@ function AdminDialog({
                   onChange={(event) => setVideoType(event.target.value)}
                   value={videoType}
                 >
-                  <option value="Short film">Short film</option>
+                  <option value="Movie">Movie</option>
                   <option value="Feature film">Feature film</option>
                   <option value="Original song">Original song</option>
                   <option value="Music video">Music video</option>
@@ -1584,7 +1609,7 @@ function Newsletter({ onSubmit }) {
   );
 }
 
-function Footer() {
+function Footer({ isAdmin, onAdminClick, onLogout }) {
   return (
     <footer className="site-footer">
       <div className="footer-main">
@@ -1639,6 +1664,13 @@ function Footer() {
           <span className="brand-name">FILMY BROTHERS</span>
         </a>
         <div className="footer-legal-meta">
+          <button
+            className={`footer-admin-link${isAdmin ? " is-admin" : ""}`}
+            type="button"
+            onClick={isAdmin ? onLogout : onAdminClick}
+          >
+            {isAdmin ? "Log out" : "Admin login"}
+          </button>
           <span>© {new Date().getFullYear()} Filmy Brothers. All rights reserved.</span>
           <span>
             Website by{" "}
@@ -2423,11 +2455,7 @@ export default function App() {
 
   return (
     <>
-      <Header
-        isAdmin={isAdmin}
-        onAdminClick={() => setDialogMode("login")}
-        onLogout={logout}
-      />
+      <Header />
       {showAdminWelcome && (
         <AdminWelcomeScreen />
       )}
@@ -2470,7 +2498,11 @@ export default function App() {
         <Story />
         <Contact onSubmit={submitContact} onSubscribe={subscribeToNewsletter} />
       </main>
-      <Footer />
+      <Footer
+        isAdmin={isAdmin}
+        onAdminClick={() => setDialogMode("login")}
+        onLogout={logout}
+      />
       {editingNewsEvent && (
         <NewsEventDialog
           item={editingNewsEvent}
