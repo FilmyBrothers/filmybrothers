@@ -922,8 +922,8 @@ button {
   position: relative;
   left: 50%;
   width: 100vw;
-  height: clamp(310px, 38vw, 440px);
-  --poster-step: clamp(220px, 25vw, 350px);
+  height: clamp(465px, 57vw, 660px);
+  --poster-step: clamp(265px, 30vw, 430px);
   margin: 0;
   transform: translateX(-50%);
   overflow: hidden;
@@ -934,7 +934,7 @@ button {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: clamp(185px, 21vw, 300px);
+  width: clamp(278px, 31.5vw, 450px);
   height: auto;
   aspect-ratio: 210 / 297;
   padding: 0;
@@ -1592,6 +1592,18 @@ button {
   border-top: 1px solid var(--color-line);
 }
 
+.footer-legal-brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer-legal-credit {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
 .footer-legal .brand {
   color: #f3f0e9;
 }
@@ -1611,7 +1623,8 @@ button {
   text-align: right;
 }
 
-.footer-legal-meta a {
+.footer-legal-meta a,
+.footer-legal-credit a {
   color: #e7e2d9;
   text-decoration: underline;
   text-decoration-color: rgba(244, 162, 97, 0.6);
@@ -1638,7 +1651,9 @@ button {
 }
 
 .footer-legal-meta a:hover,
-.footer-legal-meta a:focus-visible {
+.footer-legal-meta a:focus-visible,
+.footer-legal-credit a:hover,
+.footer-legal-credit a:focus-visible {
   color: var(--color-accent);
 }
 
@@ -2410,12 +2425,12 @@ body.motion-ready .reveal-on-scroll.is-visible {
   }
 
   .poster-stage {
-    height: 390px;
-    --poster-step: clamp(210px, 28vw, 270px);
+    height: 585px;
+    --poster-step: clamp(245px, 33vw, 335px);
   }
 
   .poster-slide {
-    width: clamp(175px, 24vw, 235px);
+    width: clamp(263px, 36vw, 353px);
   }
 
   .footer-main {
@@ -2478,6 +2493,10 @@ body.motion-ready .reveal-on-scroll.is-visible {
     align-items: flex-start;
     flex-direction: column;
     gap: 0.8rem;
+  }
+
+  .footer-legal-brand {
+    flex-wrap: wrap;
   }
 
   .footer-legal-meta {
@@ -2650,12 +2669,12 @@ body.motion-ready .reveal-on-scroll.is-visible {
   }
 
   .poster-stage {
-    height: 330px;
-    --poster-step: clamp(185px, 58vw, 230px);
+    height: 495px;
+    --poster-step: clamp(214px, 74vw, 300px);
   }
 
   .poster-slide {
-    width: clamp(155px, 54vw, 215px);
+    width: clamp(233px, 81vw, 323px);
   }
 
   .poster-controls {

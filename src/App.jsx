@@ -1659,10 +1659,18 @@ function Footer({ isAdmin, onAdminClick, onLogout }) {
         </div>
       </div>
       <div className="footer-legal">
-        <a className="brand" href="#home" aria-label="Filmy Brothers home">
-          <img className="brand-logo" src="/filmy-brothers-logo.png" alt="" />
-          <span className="brand-name">FILMY BROTHERS</span>
-        </a>
+        <div className="footer-legal-brand">
+          <a className="brand" href="#home" aria-label="Filmy Brothers home">
+            <img className="brand-logo" src="/filmy-brothers-logo.png" alt="" />
+            <span className="brand-name">FILMY BROTHERS</span>
+          </a>
+          <span className="footer-legal-credit">
+            Website by{" "}
+            <a href="https://shubhamupadhyayportfolio.netlify.app/" rel="noreferrer" target="_blank">
+              Shubham Upadhyay
+            </a>
+          </span>
+        </div>
         <div className="footer-legal-meta">
           <button
             className={`footer-admin-link${isAdmin ? " is-admin" : ""}`}
@@ -1672,12 +1680,6 @@ function Footer({ isAdmin, onAdminClick, onLogout }) {
             {isAdmin ? "Log out" : "Admin login"}
           </button>
           <span>© {new Date().getFullYear()} Filmy Brothers. All rights reserved.</span>
-          <span>
-            Website by{" "}
-            <a href="https://shubhamupadhyayportfolio.netlify.app/" rel="noreferrer" target="_blank">
-              Shubham Upadhyay
-            </a>
-          </span>
         </div>
       </div>
     </footer>
